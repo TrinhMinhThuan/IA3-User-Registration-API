@@ -1,14 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as cors from 'cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use(cors({
-    origin: [`${process.env.LINK_PUBLIC_WEBSITE}`, `${process.env.LINK_LOCALHOST}`],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'] 
-  }));  
+  // Cấu hình CORS để cho phép từ nhiều nguồn
+  app.enableCors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        `${process.env.LINK_PUBLIC_WEBSITE}`, `${process.env.LINK_LOCALHOST}`
+      ];
+      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: 'GET, HEAD, PUT, PATCH, POST, DELETE',
+  });
   await app.listen(3003);
 }
 bootstrap();
