@@ -12,14 +12,15 @@ export class UserService {
         private userRepository: Repository<User>,
     ) {}
 
-     // Phương thức đăng ký người dùng mới
-     async registerUser(RegisterUserDto: RegisterUserDto): Promise<{ message: string }> {
+    // Phương thức đăng ký người dùng mới
+    async registerUser(RegisterUserDto: RegisterUserDto): Promise<{ message: string }> {
         const { username, email, password } = RegisterUserDto;
 
-        // Kiểm tra xem tên đăng nhập đã tồn tại
-        const existingUsername = await this.userRepository.findOne({
-            where: { username },
-        });
+        // Kiểm tra xem tên đăng nhập đã tồn tại (phân biệt hoa thường)
+        const existingUsername = await this.userRepository
+            .createQueryBuilder("user")
+            .where("user.username COLLATE utf8mb4_bin = :username", { username })
+            .getOne();
 
         if (existingUsername) {
             throw new HttpException(
@@ -28,14 +29,15 @@ export class UserService {
             );
         }
 
-        // Kiểm tra xem email đã tồn tại
-        const existingEmail = await this.userRepository.findOne({
-            where: { email },
-        });
+        // Kiểm tra xem email đã tồn tại (phân biệt hoa thường)
+        const existingEmail = await this.userRepository
+            .createQueryBuilder("user")
+            .where("user.email COLLATE utf8mb4_bin = :email", { email })
+            .getOne();
 
         if (existingEmail) {
             throw new HttpException(
-                'Email đã đã tồn tại.',
+                'Email đã tồn tại.',
                 HttpStatus.BAD_REQUEST,
             );
         }
@@ -60,12 +62,15 @@ export class UserService {
         }
     }
 
+
     async login(key: string, password: string): Promise<string> {
         // Tìm người dùng theo key là username hoặc email
-        const user = await this.userRepository.findOne({
-            where: [{ username: key }, { email: key }],
-        });
-
+        const user = await this.userRepository
+        .createQueryBuilder("user")
+        .where("user.username COLLATE utf8mb4_bin = :key", { key })
+        .orWhere("user.email COLLATE utf8mb4_bin = :key", { key })
+        .getOne();
+        console.log(user)
         if (!user) {
             throw new HttpException('Tài khoản không tồn tại', HttpStatus.NOT_FOUND);
         }
