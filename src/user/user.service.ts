@@ -70,7 +70,7 @@ export class UserService {
         .where("user.username COLLATE utf8mb4_bin = :key", { key })
         .orWhere("user.email COLLATE utf8mb4_bin = :key", { key })
         .getOne();
-        console.log(user)
+
         if (!user) {
             throw new HttpException('Tài khoản không tồn tại', HttpStatus.NOT_FOUND);
         }
