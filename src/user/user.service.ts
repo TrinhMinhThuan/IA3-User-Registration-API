@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { RegisterUserDto } from './dto/register-user.dto'
 import * as bcrypt from 'bcrypt';
+import { validate } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -13,8 +15,19 @@ export class UserService {
     ) {}
 
     // Phương thức đăng ký người dùng mới
-    async registerUser(RegisterUserDto: RegisterUserDto): Promise<{ message: string }> {
-        const { username, email, password } = RegisterUserDto;
+    async registerUser(registerUserDto: RegisterUserDto): Promise<{ message: string }> {
+        // Validate DTO
+        // Chuyển đổi đối tượng vào lớp RegisterUserDto
+        const dto = plainToClass(RegisterUserDto, registerUserDto);
+
+        // Validate toàn bộ DTO
+        const errors = await validate(dto);
+
+        if (errors.length > 0) {
+            const messages = errors.map(error => Object.values(error.constraints)).flat(); // Lấy tất cả thông báo lỗi
+            throw new HttpException(messages.join(' '), HttpStatus.BAD_REQUEST); // Ghép thông báo thành chuỗi
+        }
+        const { username, email, password } = dto;
 
         // Kiểm tra xem tên đăng nhập đã tồn tại (phân biệt hoa thường)
         const existingUsername = await this.userRepository
